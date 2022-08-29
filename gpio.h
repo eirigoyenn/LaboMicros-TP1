@@ -92,7 +92,7 @@ void gpioMode (pin_t pin, uint8_t mode);
  * @return Registration succeed
  */
 bool gpioIRQ(pin_t pin, int tipo, punt_func_t callbacks);		//le paso ademas , un puntero a funcion que me permite enlazar la funcion
-
+																//todo => que pasa si no le paso un puntero?
 /**
  * @brief Write a HIGH or a LOW value to a digital pin
  * @param pin the pin to write (according PORTNUM2PIN)

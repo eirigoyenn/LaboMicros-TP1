@@ -40,7 +40,7 @@ static MyPortPin getPortPin(pin_t pin);
 #define OFFSET_PORTE (4*OFFSET_PORTA)
 void IRQs_Handler(int port); //se despacha a cada ISR
 int Search_ISF(int port);   //busca pin por pin cual es el que tiene el isf levantao
-static punt_func_t CALLBACKS[PINS_POR_PUERTO*PUERTOS];//creo un arreglo de tamaño  pinesporpuerto*puerto depunteros a funciones(manejo interrupciones)
+static punt_func_t CALLBACKS[(PINS_POR_PUERTO*PUERTOS)+1];//creo un arreglo de tamaño  pinesporpuerto*puerto depunteros a funciones(manejo interrupciones)
                                                       //Objetivo: de que todas las entradas tengan una potencial ISR
 int convers(int tipo);   				//convierte de un typedef
 #define PINS_POR_PUERTO 32
@@ -51,18 +51,7 @@ int convers(int tipo);   				//convierte de un typedef
 #define OFFSET_PORTD (3*OFFSET_PORTA)
 #define OFFSET_PORTE (4*OFFSET_PORTA)
 
-typedef enum    // IRQC => interrupt configuration.(pal PCR)
-{
-	PORT_eDisabled = 0x00,
-	PORT_eDMARising = 0x01,		//ISF flag and DMA request on rising edge.
-	PORT_eDMAFalling = 0x02,		//ISF flag and DMA request on falling edge
-	PORT_eDMAEither = 0x03,		//ISF flag and DMA request on either edge.
-	PORT_eInterruptDisasserted = 0x08,		//ISF flag and Interrupt when logic 0
-	PORT_eInterruptRising = 0x09,		//ISF flag and interrupt on rising edge.
-	PORT_eInterruptFalling = 0x0A,		//ISF flag and interrupt on falling edge..
-	PORT_eInterruptEither = 0x0B,		//ISF flag and interrupt on either edge.
-	PORT_eInterruptAsserted = 0x0C,		//ISF flag and Interrupt when logic 1
-} PORTEvent_t;
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -92,34 +81,36 @@ void gpioMode (pin_t pin, uint8_t mode){
 bool gpioIRQ(pin_t pin, int tipo, punt_func_t callback){
 	int port = PIN2PORT(pin);			//se obtiene el puerto y numero de pin
 	int num = PIN2NUM(pin);
+	static bool NVIC_A=false,NVIC_B=false,NVIC_C=false,NVIC_D=false,NVIC_E=false;
 	int modo=convers(tipo); 	//funcion para pasar de un enum , a otro , otra capa de abstracción
 	if(modo< GPIO_IRQ_CANT_MODES){
 		switch (port) {	//No se controla que antes se haya activa el Nvic. Podemos hacerlo adentro o buscar agluna forma de evitar ese posble error
-			case(PA):NVIC_EnableIRQ(PORTA_IRQn);       //habilito en Nvic , pa quee el PORTa pueda interrumpir
+			case(PA):
 				PORTA->PCR[num] |= PORT_PCR_IRQC(modo);
-				CALLBACKS[num] = callback; break;	//le asigno una lugar en el arreglo de callback
-				//CALLBACKS[port]=callback;break;
-			case(PB):NVIC_EnableIRQ(PORTB_IRQn);       //habilito en Nvic , pa quee el PORTa pueda interrumpir
-				PORTB->PCR[num] |= PORT_PCR_IRQC(modo);
-				CALLBACKS[OFFSET_PORTB+num] = callback; break;		//31-63
-				//CALLBACKS[port]=callback;break;
-			case(PC): NVIC_EnableIRQ(PORTC_IRQn);       //habilito en Nvic , pa quee el PORTa pueda interrumpir
-				PORTC->PCR[num] |= PORT_PCR_IRQC(modo);
-				CALLBACKS[OFFSET_PORTC+ num] = callback; break; //63-95
-				//CALLBACKS[port]=callback;break;
-			case(PD): NVIC_EnableIRQ(PORTD_IRQn);       //habilito en Nvic , pa quee el PORTa pueda interrumpir
-				PORTD->PCR[num] |= PORT_PCR_IRQC(modo);
-				CALLBACKS[OFFSET_PORTD + num] = callback; break; //95-127
-				//CALLBACKS[port]=callback;break;
-			case(PE):NVIC_EnableIRQ(PORTE_IRQn);       //habilito en Nvic , pa quee el PORTa pueda interrumpir
-				PORTE->PCR[num] |= PORT_PCR_IRQC(modo);
-				CALLBACKS[OFFSET_PORTE + num] = callback; break; //127-159
-				//CALLBACKS[port]=callback;break;
-			default:printf("No se pudo configurar correctamente irqc del pcr del pin seleccionado"); break;
+				CALLBACKS[num] = callback;
+				if(NVIC_A==false){NVIC_EnableIRQ(PORTA_IRQn);NVIC_A=true;}       //habilito en Nvic , pa quee el PORTa pueda interrumpirbreak;	//le asigno una lugar en el arreglo de callback
+				break;
+			case(PB):PORTB->PCR[num] |= PORT_PCR_IRQC(modo);
+				CALLBACKS[OFFSET_PORTB+num] = callback; 	//31-63
+				if(NVIC_B==false){NVIC_EnableIRQ(PORTB_IRQn); NVIC_B=true;}
+				break;	     //habilito en Nvic , pa quee el PORTa pueda interrumpir
+			case(PC): PORTC->PCR[num] |= PORT_PCR_IRQC(modo);
+				CALLBACKS[OFFSET_PORTC+ num] = callback; //63-95
+				if(NVIC_C==false){NVIC_EnableIRQ(PORTC_IRQn);NVIC_C=true;}
+				 break;      //habilito en Nvic , pa quee el PORTa pueda interrumpir
+			case(PD):PORTD->PCR[num] |= PORT_PCR_IRQC(modo);
+				CALLBACKS[OFFSET_PORTD + num] = callback; //95-127
+				if(NVIC_D==false){NVIC_EnableIRQ(PORTD_IRQn);NVIC_D=true;}
+				 break;      //habilito en Nvic , pa quee el PORTa pueda interrumpir /
+			case(PE):PORTE->PCR[num] |= PORT_PCR_IRQC(modo);
+				CALLBACKS[OFFSET_PORTE + num] = callback;  //127-159
+				if(NVIC_E==false){NVIC_EnableIRQ(PORTE_IRQn); NVIC_E=true;}
+				break;       //habilito en Nvic , pa quee el PORTa pueda interrumpir
+			default:printf("No se pudo configurar correctamente irqc del pcr del pin seleccionado"); return false ;break;
 		}
-		return 1;
+		return true;
 	}
-	return 0;	//MAL DATO DE ENTRADA
+	return false;	//MAL DATO DE ENTRADA
 }
 
 	/*switch(irqMode)
@@ -244,7 +235,7 @@ int convers(int tipo){
         if(i==tipo){return tipo; }
         cont+=1;
     }
-    for (cont;cont<9;cont++){		 //se elige 3 por la forma de IRQC ver pag 289 del reference manual
+    for (;cont<9;cont++){		 //se elige 3 por la forma de IRQC ver pag 289 del reference manual
         if(cont==tipo){return cont+4;}
     }
     return 15;//error
@@ -253,37 +244,41 @@ int convers(int tipo){
 void IRQs_Handler(int num_pin) {
 	(*CALLBACKS[num_pin])();
 }
-int Search_ISF(int port){			//FALTA TERMINAR.
+int Search_ISF(int port){			//TRATAR DE HACERLO CON BIT-BAND ALIAS (clase 4 interrupcones 2.17.)
+	//Tengo que protegerla de alguna forma , pa que no me salte un interrupcion en este proceso.
 	uint32_t ISFR_Port;
 	uint32_t MASK=1; //MASCARA DE 1.
+	int num_pin=0;
+	int salida=(PINS_POR_PUERTO*PUERTOS);
 	switch(port){
 		case(PA): ISFR_Port=PORTA->ISFR;//SALVO EL REGISTRO
-			for(int num_pin=0; num_pin<32;){
-				if((ISFR_Port & MASK)==1) {return num_pin;}	//la mascara busca anular el resto de los valores y encontrar el primero
-				num_pin+=1;
-				ISFR_Port=ISFR_Port>>1;}break;		//shifteo 1
+			for( num_pin=0; (num_pin<32)&&(salida==PINS_POR_PUERTO*PUERTOS);){
+				if((ISFR_Port & MASK)==1) {salida=num_pin;}	//la mascara busca anular el resto de los valores y encontrar el primero
+				else{num_pin+=1;
+					ISFR_Port=ISFR_Port>>1;}}break;		//shifteo 1
 		case(PB):ISFR_Port=PORTB->ISFR;
-			for(int num_pin=0; num_pin<32;){
-				if((ISFR_Port & MASK)==1) {return num_pin;}
-				num_pin+=1;
-				ISFR_Port=ISFR_Port>>1;}break;
+			for(num_pin=0; (num_pin<32)&&(salida==PINS_POR_PUERTO*PUERTOS);){
+				if((ISFR_Port & MASK)==1) {salida=num_pin;}
+				else{num_pin+=1;
+					ISFR_Port=ISFR_Port>>1;}}break;
 		case(PC):ISFR_Port=PORTC->ISFR;
-			for(int num_pin=0; num_pin<32;){
-				if((ISFR_Port & MASK)==1) {return num_pin;}
-				num_pin+=1;
-				ISFR_Port=ISFR_Port>>1;}break;
+			for(num_pin=0; (num_pin<32)&&(salida==PINS_POR_PUERTO*PUERTOS);){
+				if((ISFR_Port & MASK)==1) {salida=num_pin;}
+				else{num_pin+=1;
+					ISFR_Port=ISFR_Port>>1;}}break;
 		case(PD):ISFR_Port=PORTD->ISFR;
-			for(int num_pin=0; num_pin<32;){
-				if((ISFR_Port & MASK)==1) {return num_pin;}
-				num_pin+=1;
-				ISFR_Port=ISFR_Port>>1;}break;
+			for(num_pin=0; (num_pin<32)&&(salida==PINS_POR_PUERTO*PUERTOS);){
+				if((ISFR_Port & MASK)==1) {salida=num_pin;}
+				else{num_pin+=1;
+					ISFR_Port=ISFR_Port>>1;}}break;
 		case(PE):ISFR_Port=PORTE->ISFR;
-			for(int num_pin=0; num_pin<32;){
-				if((ISFR_Port & MASK)==1) {return num_pin;}
-				num_pin+=1;
-				ISFR_Port=ISFR_Port>>1;}break;
-		default:break;
+			for(num_pin=0; (num_pin<32)&&(salida==PINS_POR_PUERTO*PUERTOS);){
+				if((ISFR_Port & MASK)==1) {salida=num_pin;}
+				else{num_pin+=1;
+					ISFR_Port=ISFR_Port>>1;}}break;
+		default: return salida;break;
 	}
+	return salida;
 }
 
 /*Funciones que se llaman de manera automatica*/
@@ -307,6 +302,12 @@ __ISR__ PORTE_IRQHandler(void) {
 	int num_pin=Search_ISF(PE);
 	PORTE->PCR[num_pin]|=PORT_PCR_ISF_MASK;
 	IRQs_Handler(num_pin+OFFSET_PORTE); }
+
+
+/*__ISR__ SysTick_Handler(void){
+
+}*/
+
 
 /*******************************************************************************
  ******************************************************************************/
