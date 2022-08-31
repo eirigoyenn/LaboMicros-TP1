@@ -122,6 +122,7 @@ void timerStart(tim_id_t id, ttick_t ticks, uint8_t mode, tim_callback_t callbac
     	new_timer.cnt = ticks;
     	new_timer.callback = callback;
     	new_timer.mode = mode;
+    	new_timer.expired = 0;
 
     	timers[id] = new_timer;	//el id es timerGetId. Hay que llamarlo antes de entrr a timerStart
 
