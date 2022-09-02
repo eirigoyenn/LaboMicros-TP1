@@ -369,8 +369,8 @@ eSystemState wait_doublepress_handler() {
 			allGood++;
 			if (i == 0) { admin_id = true; }
 
-			for (int i = 0; i < MAX_NUM_PSW; i++) {
-				currUser.password[i] = registeredUsers[i].password[i];
+			for (int j = 0; j < MAX_NUM_PSW; j++) {
+				currUser.password[j] = registeredUsers[i].password[j];
 			}
 		}
 	}
@@ -481,7 +481,7 @@ eSystemState password_turn_handler(eSystemEvent newEvent) {
 			{
 				currPointer.position = 0;
 				myScreen.screenNum = 0;
-				changeState(5);
+				changeState(6);
 
 			}
 			else if (currPointer.position == 3) {
@@ -506,7 +506,7 @@ eSystemState password_turn_handler(eSystemEvent newEvent) {
 			else if (currPointer.position == 4) {
 				currPointer.position--;
 				myScreen.screenNum = 0;
-				changeState(5);
+				changeState(6);
 			}
 			else {
 				currPointer.position--;
@@ -561,6 +561,7 @@ eSystemState password_doublepress_handler(void) {
 	clearScreenId();
 	if (allGood /*&& !admin_id*/) {
 		turnOn_Secs_GREEN(10);
+		clearUser();
 		nextState = wait_State;
 		//printf("Password ok!\n");
 	}
@@ -576,7 +577,7 @@ eSystemState password_doublepress_handler(void) {
 		}
 
 	}
-	clearUser();
+
 	return nextState;
 
 }
