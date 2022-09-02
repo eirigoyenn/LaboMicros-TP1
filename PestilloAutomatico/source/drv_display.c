@@ -103,11 +103,11 @@ enum{
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-
 static void set7Seg(int segs, bool dp);
 static void setDigit(int digit);
 static void sendChar(int digit, char caract);
 static void refreshDisplay(void);
+
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -148,6 +148,7 @@ static char word[4];
 static float brillo;
 static int pointer_digit = -1;
 static float opciones_brillo[4] = {DISPLAY_REFRESH_RATE_MS, 0.8, 1.5, 3};
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -161,8 +162,6 @@ void DRV_Init_Display(void)
 		gpioMode(pines_seg[i], OUTPUT);
 	timer_id = timerGetId();
 	timerStart(timer_id, TIMER_MS_2_TICKS(DISPLAY_REFRESH_RATE_MS), TIM_MODE_PERIODIC, refreshDisplay);
-	//word = malloc(MAX_DIGIT*sizeof(char));
-
 }
 
 void print2display(char str[4])
@@ -171,7 +170,6 @@ void print2display(char str[4])
 	{
 		word[i]=str[i];
 	}
-	//memcpy(word, str, MAX_DIGIT*sizeof(char));
 }
 
 void setPointer(int digit)
@@ -191,6 +189,7 @@ void changeBright(void)
 	timerStop(timer_id);
 	timerStart(timer_id, TIMER_MS_2_TICKS(brillo), TIM_MODE_PERIODIC, refreshDisplay);
 }
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -199,16 +198,16 @@ void changeBright(void)
 void refreshDisplay(void)
 {
 	for (int i=0;i<4;i++)
+	{
+		if (i==pointer_digit)
 		{
-			if (i==pointer_digit)
-			{
-				sendChar(i, (word[i] | DP));
-			}
-			else
-			{
-				sendChar(i, word[i]);
-			}
+			sendChar(i, (word[i] | DP));
 		}
+		else
+		{
+			sendChar(i, word[i]);
+		}
+	}
 }
 
 void sendChar(int digit, char caract)

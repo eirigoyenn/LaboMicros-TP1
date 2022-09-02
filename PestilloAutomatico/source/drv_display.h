@@ -28,7 +28,6 @@ enum{
 	POINT_DIGIT_3
 };
 
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -61,6 +60,10 @@ void print2display(char str[4]);
 */
 void setPointer(int digit);
 
+/**
+ * @brief TODO: cambia el brillo del display
+ * @return Nada
+*/
 void changeBright(void);
 
 /*******************************************************************************

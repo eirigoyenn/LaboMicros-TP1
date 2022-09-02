@@ -53,7 +53,7 @@ void Toggle_LED_FRDM_RED(void){
 	gpioToggle(PIN_LED_RED);
 
 }
-void Toggle_LED_FRDM_GREED(void){
+void Toggle_LED_FRDM_GREEN(void){
 	gpioToggle(PIN_LED_GREEN);
 
 }

@@ -10,7 +10,7 @@
 #include "drv_switch.h"
 #include "gpio.h"
 #include "timer.h"
-#include "buffer.h"
+#include "drv_FRDM.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -39,6 +39,7 @@ static void IRQ_RchA(void);
 static void IRQ_RSwitch(void);
 static void makeTurn(void);
 static void btnPressed(void);
+
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -49,11 +50,10 @@ static void btnPressed(void);
 static int event_stack;
 
 static int B_val;
-//static int switch_val;
-//static bool post_bounce = true;
 static bool was_giant_press = false;
 static tim_id_t press_count_timer;
 static tim_id_t anti_multi_turn_timer;
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -88,11 +88,13 @@ encoder_event_t getEvent(void)
 
 static void IRQ_RchA(void)
 {
+	TurnOn_LED_FRDM_BLUE();
 	if(!timerExpired(anti_multi_turn_timer))
 	{
 		B_val = gpioRead(PIN_RCHB);
 		timerStart(anti_multi_turn_timer, TIMER_MS_2_TICKS(70), TIM_MODE_SINGLESHOT, makeTurn);
 	}
+	TurnOff_LED_FRDM_BLUE();
 }
 
 static void makeTurn(void)
@@ -106,10 +108,12 @@ static void makeTurn(void)
  
 static void IRQ_RSwitch(void)
 {
+	TurnOn_LED_FRDM_BLUE();
 	if(!timerRunning(press_count_timer))
 	{
 		timerStart(press_count_timer, TIMER_MS_2_TICKS(100), TIM_MODE_PERIODIC, btnPressed);
 	}
+	TurnOff_LED_FRDM_BLUE();
 }
 
 static void btnPressed(void)

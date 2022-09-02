@@ -24,8 +24,8 @@ enum{
 	STATUS_0,
 	STATUS_1,
 	STATUS_3,
-	STATUS_4,	//NO FUNCA
-	STATUS_5,	//NO FUNCA
+	STATUS_4,	//NO FUNCIONA
+	STATUS_5,	//NO FUNCIONA
 	STATUS_6,
 	STATUS_7
 };
@@ -45,10 +45,9 @@ enum{
 void DRV_Init_LEDs(void);
 
 /**
- * @brief TODO: completar descripcion
- * @param param1 Descripcion parametro 1
- * @param param2 Descripcion parametro 2
- * @return Descripcion valor que devuelve
+ * @brief TODO: Cambia los LEDs que se prenden
+ * @param state numero entre 0 y 7 para setear los LEDs. LED1 es el primer bit, LED3 es el tercer bit
+ * @return Nada
 */
 void changeState(int state);
 

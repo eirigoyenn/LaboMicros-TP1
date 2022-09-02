@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -42,17 +41,16 @@ typedef enum{
  ******************************************************************************/
 
 /**
- * @brief TODO: completar descripcion
- * @param param1 Descripcion parametro 1
- * @param param2 Descripcion parametro 2
- * @return Descripcion valor que devuelve
+ * @brief TODO: Inicializa el encoder.
+ * @return Nada
 */
 void DRV_Init_Switch(void);
 
+/**
+ * @brief TODO: Devuelve el último evento del encoder.
+ * @return Ultimo evento del encoder según encoder_event_t
+*/
 encoder_event_t getEvent(void);
-
-// +ej: char lcd_goto (int fil, int col);+
-
 
 /*******************************************************************************
  ******************************************************************************/
