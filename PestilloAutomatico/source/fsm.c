@@ -377,6 +377,7 @@ eSystemState wait_doublepress_handler() {
 	eSystemState nextState = wait_State;
 	if (allGood) {
 		nextState = pswrd_Input_State;
+		clearScreenPass();
 	}
 	else {
 		blockCounter++;
@@ -385,10 +386,9 @@ eSystemState wait_doublepress_handler() {
 			blockCounter = 0;
 			nextState = block_State;
 		}
-
+		clearScreenPass();
 	}
 
-	clearScreenPass();
 
 	return nextState;
 
