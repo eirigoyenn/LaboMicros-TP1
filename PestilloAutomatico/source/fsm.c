@@ -27,6 +27,10 @@ static char blockCounter = 0; //CONTADOR DE INTENTOS FALLIDOS
 static user registeredUsers[25];
 static int usernum = 0; //NUMERO DE USUARIOS REGISTRADOS EN LA DATABASE
 
+static int adminAddMode = 0;
+static int adminDelMode = 0;
+static int currUserIndex=-1;
+
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -61,6 +65,11 @@ void printDisplayId(void);
 
 char compareArray(int a[], int b[], int size);
 char compareCharArray(char a[], char b[], int size);
+
+void clearOldUser(void);
+int saveNewUserId(void);
+void saveNewUserPass(int currUserIndex);
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -211,6 +220,8 @@ eSystemState wait_derivate(eSystemEvent newEvent) {
 			break;
 		case Card_Error:
 			newState = wait_carderror_handler();
+		default:
+			break;
 
 	}
 	return newState;
@@ -236,6 +247,8 @@ eSystemState password_derivate(eSystemEvent newEvent) {
 				break;
 			case giant_press:
 				changeBright();
+				break;
+			default:
 				break;
 
 	}
@@ -343,6 +356,7 @@ eSystemState wait_turn_handler(eSystemEvent newEvent)
 
 	return wait_State;
 }
+
 eSystemState wait_press_handler(void)
 {
 
@@ -356,17 +370,22 @@ eSystemState wait_press_handler(void)
 	}
 	return wait_State;
 }
-eSystemState wait_doublepress_handler() {
+
+eSystemState wait_doublepress_handler() {		
 
 	int c;
 	for (c = 0; c < 8; c++) {
 		currUser.id[c] = myScreen.screen[c];
 	}
 
+	eSystemState nextState = wait_State;
+
 	char allGood = 0;
-	for (int i= 0; i < (sizeof(currUser.id) / sizeof(currUser.id[0])); i++) {
+
+	for (int i= 0; i < 25 ; i++) {
 		if (compareArray(currUser.id, registeredUsers[i].id, (sizeof(currUser.id) / sizeof(int)))) {
 			allGood++;
+			currUserIndex=i;
 			if (i == 0) { admin_id = true; }
 
 			for (int j = 0; j < MAX_NUM_PSW; j++) {
@@ -374,21 +393,56 @@ eSystemState wait_doublepress_handler() {
 			}
 		}
 	}
-	eSystemState nextState = wait_State;
-	if (allGood) {
-		nextState = pswrd_Input_State;
-		clearScreenPass();
-	}
-	else {
-		blockCounter++;
-		turnOn_Secs_RED(1);
-		if (blockCounter == 3) {
-			blockCounter = 0;
-			nextState = block_State;
-		}
-		clearScreenPass();
-	}
+		
 
+	if(!adminAddMode && !adminDelMode){
+
+		if (allGood) {
+			nextState = pswrd_Input_State;
+			clearScreenPass();
+			
+		}
+		else {
+			blockCounter++;
+			turnOn_Secs_RED(1);
+			if (blockCounter == 3) {
+				blockCounter = 0;
+				nextState = block_State;
+			}
+			clearScreenId();
+
+		}
+	}
+	if(adminAddMode && !adminDelMode ){
+
+		if(currUserIndex != 0){
+
+			currUserIndex=saveNewUserId();//agregar funcion de guardar id en nuevo usuario y pasar a password con el currUserIndex que va a ser el nuevo id
+			if (allGood) {			
+				nextState = pswrd_Input_State;
+				clearScreenPass();
+			}
+			
+
+		}
+		else{
+
+			if (allGood) {			
+				nextState = pswrd_Input_State;			//pasar a esperar contraseña con el id de currState
+				clearScreenPass();
+			}
+		}
+
+	}
+	else if (!adminAddMode && adminDelMode ){
+
+			adminDelMode=0;
+			clearScreenId();
+			clearOldUser();//agregar funcion de  elimina el id de ese usuario si no es el del admin y luego se va al inicio
+
+
+
+	}
 
 	return nextState;
 
@@ -402,7 +456,7 @@ eSystemState wait_pass_handler() {
 			for (int i = 0; i < usernum; i++) {
 				if (!allGood && compareCharArray(currUser.card, registeredUsers[i].card, (sizeof(currUser.card) / sizeof(char)))) {
 					allGood++;
-					//memcpy(currUser.password, registeredUsers[i].password, sizeof(registeredUsers[i].password));
+
 					for (int j = 0; j < MAX_NUM_PSW; j++) {
 						currUser.password[j] = registeredUsers[i].password[j];
 					}
@@ -540,44 +594,77 @@ eSystemState password_press_handler(void) {
 eSystemState password_doublepress_handler(void) {
 
 	int newPass[MAX_NUM_PSW];
-
-	for (int i = 0; i < MAX_NUM_PSW; i++) {
-		newPass[i] = myScreen.screen[i];
-	}
-
-
 	int i = 0;
 	char allGood = 0;
 
-	if (compareArray(currUser.password, newPass, (sizeof(currUser.password) / sizeof(int)))) {
-		allGood++;
+	if((!adminAddMode  && !adminDelMode) || (adminAddMode && currUserIndex==0) ){
+
 		for (int i = 0; i < MAX_NUM_PSW; i++) {
-			currUser.password[i] = newPass[i];
+			newPass[i] = myScreen.screen[i];
 		}
 
+		if (compareArray(currUser.password, newPass, (sizeof(currUser.password) / sizeof(int)))) {
+			allGood++;
+			for (i = 0; i < MAX_NUM_PSW; i++) {
+				currUser.password[i] = newPass[i];
+			}
+
+		}
+	}
+	else {
+		allGood=1;
 	}
 
 	eSystemState nextState = pswrd_Input_State;
-	clearScreenId();
-	if (allGood /*&& !admin_id*/) {
-		turnOn_Secs_GREEN(10);
-		clearUser();
-		nextState = wait_State;
-		//printf("Password ok!\n");
-	}
 
+	if (allGood ) {
+		
+		if(currUserIndex==0 && !adminAddMode && !adminDelMode){
+			adminAddMode=1;
+			TurnOn_LED_FRDM_BLUE();
+			TurnOn_LED_FRDM_GREEN();
+			TurnOn_LED_FRDM_RED();
+		}
+		else if(currUserIndex==0 && adminAddMode && !adminDelMode){
+			adminAddMode=0;
+			adminDelMode=1;
+			TurnOff_LED_FRDM_BLUE();
+			TurnOff_LED_FRDM_GREEN();
+			TurnOff_LED_FRDM_RED();
+			TurnOn_LED_FRDM_RED();
+			TurnOn_LED_FRDM_GREEN();
+			TurnOn_LED_FRDM_BLUE();
+		} 
+		else if (currUserIndex!=0 && adminAddMode && !adminDelMode){
+
+			adminAddMode=0;
+			for (int i = 0; i < MAX_NUM_PSW; i++) {
+				registeredUsers[currUserIndex].password[i] = myScreen.screen[i];
+			}
+			TurnOff_LED_FRDM_BLUE();
+			TurnOff_LED_FRDM_GREEN();
+			TurnOff_LED_FRDM_RED();
+
+		}
+		else
+		{
+			turnOn_Secs_GREEN(10);
+		}
+		nextState = wait_State;
+	}
 	else {
 		blockCounter++;
 		turnOn_Secs_RED(1);
 		clearScreenPass();
 		if (blockCounter == 3) {
 			blockCounter = 0;
-			//printf("Block!");
 			nextState = block_State;
 		}
 
 	}
-
+	clearUser();
+	clearScreenId();
+	currUserIndex=-1;
 	return nextState;
 
 }
@@ -684,3 +771,41 @@ void printDisplayERR(){
 	setPointer(0);
 }
 
+void clearOldUser(void){
+
+									//aca la idea es borrar el usuario y hay q decrementar usernum y tirar todo el resto un lugar para atras.
+	// int i ;
+	// char allGood=0;
+	// char flag=0;
+	// for (i= 0; i < usernum; i++) {
+	// 	if (compareArray(currUser.id, registeredUsers[i].id, (sizeof(currUser.id) / sizeof(int)))) {
+	// 		allGood++;
+	// 		flag=i;
+	// 		if (i == 0) { admin_id = true; }
+
+	// 		for (int i = 0; i < MAX_NUM_PSW; i++) {
+	// 			currUser.password[i] = registeredUsers[i].password[i];
+	// 		}
+	// 	}
+	// }
+
+	
+}
+int saveNewUserId(void){
+
+	for(int i=0;i<8;i++){
+		registeredUsers[usernum].id[i]=currUser.id[i];
+	}
+	usernum++;
+
+	return usernum-1;
+
+}
+
+void saveNewUserPass(int currUserIndex){
+
+	for(int i=0;i<5;i++){
+
+		registeredUsers[currUserIndex].password[i]=currUser.password[i];
+	}
+}

@@ -6,7 +6,6 @@
 C_SRCS += \
 ../source/App.c \
 ../source/SysTick.c \
-../source/buffer.c \
 ../source/drv_FRDM.c \
 ../source/drv_display.c \
 ../source/drv_leds.c \
@@ -19,7 +18,6 @@ C_SRCS += \
 OBJS += \
 ./source/App.o \
 ./source/SysTick.o \
-./source/buffer.o \
 ./source/drv_FRDM.o \
 ./source/drv_display.o \
 ./source/drv_leds.o \
@@ -32,7 +30,6 @@ OBJS += \
 C_DEPS += \
 ./source/App.d \
 ./source/SysTick.d \
-./source/buffer.d \
 ./source/drv_FRDM.d \
 ./source/drv_display.d \
 ./source/drv_leds.d \
