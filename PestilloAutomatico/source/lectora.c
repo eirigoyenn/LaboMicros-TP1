@@ -12,7 +12,7 @@
 #include "gpio.h"
 #include <stdio.h>
 #include "timer.h"
-
+#include "drv_FRDM.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -166,7 +166,7 @@ static uint32_t checkParity(char cardValue){
 }
 
 static void callback_saveCardValue(void){  // este es con el interrupt de clock en flanco neg .  En realidad el bitValue tengo q leer un GPIO
-
+	TurnOn_LED_FRDM_BLUE();
 	uint32_t realPos=absIndex % ARRAY_WD_LENGTH ;
 	uint32_t realIndex= (int)absIndex/ARRAY_WD_LENGTH ;
 
@@ -187,12 +187,12 @@ static void callback_saveCardValue(void){  // este es con el interrupt de clock 
 			cardInformation[0]=cardInformation[0]>>1;
 		}
 	}
-
+	TurnOff_LED_FRDM_BLUE();
 
 }
 
 static void callback_changeStatus(void){   // este es la interrup del flanco neg y pos del ENABLE.  En el bitEnable es un puerto en realidad
-
+	TurnOn_LED_FRDM_BLUE();
 	int i=0;
 	int bitEnable = gpioRead(PIN_ENABLE_LECT);
 
@@ -207,7 +207,7 @@ static void callback_changeStatus(void){   // este es la interrup del flanco neg
 		timerStop(timer_id_lect);
 		statusFlag=FINISHED_;
 	}
-
+	TurnOff_LED_FRDM_BLUE();
 }
 
 static void callback_lectoraTimeOut(void){
